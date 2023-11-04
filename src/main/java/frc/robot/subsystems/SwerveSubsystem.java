@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import com.kauailabs.navx.frc.AHRS;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -11,12 +12,15 @@ import edu.wpi.first.networktables.DoubleArrayEntry;
 import edu.wpi.first.networktables.DoubleEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.util.WPIUtilJNI;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.DrivetrainConstants;
 import frc.robot.constants.VisionConstants;
 import frc.robot.controllers.SwerveModuleControlller;
 import frc.robot.utils.NetworkTableUtils;
 import frc.robot.utils.SwerveUtils;
+import frc.robot.utils.VisionUtils;
+
 import java.util.Arrays;
 
 public class SwerveSubsystem extends SubsystemBase {
@@ -80,6 +84,20 @@ public class SwerveSubsystem extends SubsystemBase {
             }
     );
 
+    private final SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(
+                DrivetrainConstants.driveKinematics,
+                gyro.getRotation2d(),
+                new SwerveModulePosition[] {
+                        frontLeft.getPosition(),
+                        frontRight.getPosition(),
+                        rearLeft.getPosition(),
+                        rearRight.getPosition()
+                },
+                new Pose2d(),
+                VecBuilder.fill(0.05, 0.05, Units.degreesToRadians(5)),
+                VecBuilder.fill(0.05, 0.05, Units.degreesToRadians(30)));
+
+
     // Network Tables Telemetry
     private final DoubleArrayEntry setpointsTelemetry = NetworkTableInstance.getDefault()
             .getTable("Swerve").getDoubleArrayTopic("Setpoints").getEntry(new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
@@ -100,6 +118,10 @@ public class SwerveSubsystem extends SubsystemBase {
     private final DoubleEntry frontleftpos = NetworkTableInstance.getDefault()
             .getTable("Swerve").getDoubleTopic("flpos").getEntry(frontLeft.getPosition().angle.getRadians());
 
+    private final DoubleArrayEntry visPoseEstimator = NetworkTableInstance.getDefault()
+            .getTable("Swerve").getDoubleArrayTopic("VisPose").getEntry(new double[]{poseEstimator.getEstimatedPosition().getX(),
+                    poseEstimator.getEstimatedPosition().getY(),
+                    poseEstimator.getEstimatedPosition().getRotation().getRadians()});
     // Periodic
     @Override
     public void periodic() {
@@ -113,6 +135,17 @@ public class SwerveSubsystem extends SubsystemBase {
                         rearRight.getPosition()
                 }
         );
+
+        poseEstimator.addVisionMeasurement(
+                VisionUtils.getBotPose2d(""),
+                Timer.getFPGATimestamp() - (VisionUtils.getLatency_Pipeline("")/1000.0) - (VisionUtils.getLatency_Capture("")/1000.0)
+        );
+
+        visPoseEstimator.set(new double[]{
+                poseEstimator.getEstimatedPosition().getX(),
+                poseEstimator.getEstimatedPosition().getY(),
+                poseEstimator.getEstimatedPosition().getRotation().getRadians(),
+        });
 
         // Coen's Vision Lineup Thing:
         // find the botpose network table id thingy, construct a pose2d, feed it into resetodometry
