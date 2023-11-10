@@ -73,16 +73,16 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     // Swerve Odometry
-    private final SwerveDriveOdometry odometry = new SwerveDriveOdometry(
-            DrivetrainConstants.driveKinematics,
-            Rotation2d.fromRadians(heading()),
-            new SwerveModulePosition[]{
-                    frontLeft.getPosition(),
-                    frontRight.getPosition(),
-                    rearLeft.getPosition(),
-                    rearRight.getPosition()
-            }
-    );
+//    private final SwerveDriveOdometry odometry = new SwerveDriveOdometry(
+//            DrivetrainConstants.driveKinematics,
+//            Rotation2d.fromRadians(heading()),
+//            new SwerveModulePosition[]{
+//                    frontLeft.getPosition(),
+//                    frontRight.getPosition(),
+//                    rearLeft.getPosition(),
+//                    rearRight.getPosition()
+//            }
+//    );
 
     private final SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(
                 DrivetrainConstants.driveKinematics,
@@ -104,10 +104,10 @@ public class SwerveSubsystem extends SubsystemBase {
     private final DoubleArrayEntry actualTelemetry = NetworkTableInstance.getDefault()
             .getTable("Swerve").getDoubleArrayTopic("Actual").getEntry(new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
 
-    private final DoubleArrayEntry poseTelemetry = NetworkTableInstance.getDefault()
-            .getTable("Swerve").getDoubleArrayTopic("Pose").getEntry(new double[]{odometry.getPoseMeters().getTranslation().getX(),
-                    odometry.getPoseMeters().getTranslation().getY(),
-                    odometry.getPoseMeters().getRotation().getRadians()});
+//    private final DoubleArrayEntry poseTelemetry = NetworkTableInstance.getDefault()
+//            .getTable("Swerve").getDoubleArrayTopic("Pose").getEntry(new double[]{odometry.getPoseMeters().getTranslation().getX(),
+//                    odometry.getPoseMeters().getTranslation().getY(),
+//                    odometry.getPoseMeters().getRotation().getRadians()});
 
     private final DoubleEntry gyroHeading = NetworkTableInstance.getDefault()
             .getTable("Swerve").getDoubleTopic("GyroHeading").getEntry(heading());
@@ -126,19 +126,29 @@ public class SwerveSubsystem extends SubsystemBase {
     @Override
     public void periodic() {
         // Update odometry
-        odometry.update(
-                Rotation2d.fromRadians(heading()),
+//        odometry.update(
+//                poseEstimator.getEstimatedPosition().getRotation(),
+//                new SwerveModulePosition[]{
+//                        frontLeft.getPosition(),
+//                        frontRight.getPosition(),
+//                        rearLeft.getPosition(),
+//                        rearRight.getPosition()
+//                }
+//        );
+
+        poseEstimator.addVisionMeasurement(
+                VisionUtils.getBotPose2d(""),
+                Timer.getFPGATimestamp() - (VisionUtils.getLatency_Pipeline("")/1000.0) - (VisionUtils.getLatency_Capture("")/1000.0)
+        );
+
+        poseEstimator.update(
+                poseEstimator.getEstimatedPosition().getRotation(),
                 new SwerveModulePosition[]{
                         frontLeft.getPosition(),
                         frontRight.getPosition(),
                         rearLeft.getPosition(),
                         rearRight.getPosition()
                 }
-        );
-
-        poseEstimator.addVisionMeasurement(
-                VisionUtils.getBotPose2d(""),
-                Timer.getFPGATimestamp() - (VisionUtils.getLatency_Pipeline("")/1000.0) - (VisionUtils.getLatency_Capture("")/1000.0)
         );
 
         visPoseEstimator.set(new double[]{
@@ -171,23 +181,23 @@ public class SwerveSubsystem extends SubsystemBase {
                 rearLeft.getDesiredState().angle.getRadians(), rearLeft.getDesiredState().speedMetersPerSecond,
                 rearRight.getDesiredState().angle.getRadians(), rearRight.getDesiredState().speedMetersPerSecond});
 
-        poseTelemetry.set(new double[]{
-                odometry.getPoseMeters().getTranslation().getX(),
-                odometry.getPoseMeters().getTranslation().getY(),
-                odometry.getPoseMeters().getRotation().getRadians()
-        });
+//        poseTelemetry.set(new double[]{
+//                odometry.getPoseMeters().getTranslation().getX(),
+//                odometry.getPoseMeters().getTranslation().getY(),
+//                odometry.getPoseMeters().getRotation().getRadians()
+//        });
 
         gyroHeading.set(heading());
     }
 
     // Define robot pose
     private Pose2d getPose() {
-        return odometry.getPoseMeters();
+        return poseEstimator.getEstimatedPosition();
     }
 
     // Reset odometry function
     private void resetOdometry(Pose2d pose) {
-        odometry.resetPosition(
+        poseEstimator.resetPosition(
                 Rotation2d.fromRadians(heading()),
                 new SwerveModulePosition[]{
                         frontLeft.getPosition(),
