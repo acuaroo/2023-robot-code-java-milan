@@ -631,10 +631,8 @@ public class VisionUtils {
      * @return
      */
     public static Pose2d getBotPose2d(String limelightName) {
-
         double[] result = getBotPose(limelightName);
         return toPose2D(result);
-
     }
 
     public static boolean getTV(String limelightName) {

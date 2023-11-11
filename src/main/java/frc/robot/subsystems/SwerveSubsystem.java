@@ -95,8 +95,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 },
                 new Pose2d(),
                 VecBuilder.fill(0.05, 0.05, Units.degreesToRadians(5)),
-                VecBuilder.fill(0.05, 0.05, Units.degreesToRadians(30)));
-
+                VecBuilder.fill(0.5, 0.5, Units.degreesToRadians(30)));
 
     // Network Tables Telemetry
     private final DoubleArrayEntry setpointsTelemetry = NetworkTableInstance.getDefault()
@@ -136,13 +135,18 @@ public class SwerveSubsystem extends SubsystemBase {
 //                }
 //        );
 
-        poseEstimator.addVisionMeasurement(
-                VisionUtils.getBotPose2d(""),
-                Timer.getFPGATimestamp() - (VisionUtils.getLatency_Pipeline("")/1000.0) - (VisionUtils.getLatency_Capture("")/1000.0)
-        );
+
+        Pose2d visionPos = VisionUtils.getBotPose2d_wpiBlue("");
+
+        if (visionPos.getX() != 0 && visionPos.getY() != 0) {
+            poseEstimator.addVisionMeasurement(
+                    visionPos,
+                    Timer.getFPGATimestamp() - (VisionUtils.getLatency_Pipeline("")/1000.0) - (VisionUtils.getLatency_Capture("")/1000.0)
+            );
+        }
 
         poseEstimator.update(
-                poseEstimator.getEstimatedPosition().getRotation(),
+                new Rotation2d(heading()),
                 new SwerveModulePosition[]{
                         frontLeft.getPosition(),
                         frontRight.getPosition(),
@@ -156,6 +160,10 @@ public class SwerveSubsystem extends SubsystemBase {
                 poseEstimator.getEstimatedPosition().getY(),
                 poseEstimator.getEstimatedPosition().getRotation().getRadians(),
         });
+
+//        System.out.println(poseEstimator.getEstimatedPosition().getX());
+        System.out.println(poseEstimator.getEstimatedPosition().getY());
+//        System.out.println(poseEstimator.getEstimatedPosition().getX());
 
         // Coen's Vision Lineup Thing:
         // find the botpose network table id thingy, construct a pose2d, feed it into resetodometry
@@ -196,7 +204,7 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     // Reset odometry function
-    private void resetOdometry(Pose2d pose) {
+    public void resetOdometry(Pose2d pose) {
         poseEstimator.resetPosition(
                 Rotation2d.fromRadians(heading()),
                 new SwerveModulePosition[]{

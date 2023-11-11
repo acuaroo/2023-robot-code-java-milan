@@ -9,8 +9,8 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 
 public class DrivetrainConstants {
 
-    public static final double maxSpeedMetersPerSecond = 4.0;
-    public static final double maxAngularSpeed = Math.PI;
+    public static final double maxSpeedMetersPerSecond = 1.0;
+    public static final double maxAngularSpeed = Math.PI / 2;
 
     public static final double directionSlewRate = 4.0; // rads/sec - turning
     public static final double magnitudeSlewRate = 5.0; // percent/second (1 = 100%) - forward/backward/traverse
@@ -32,7 +32,7 @@ public class DrivetrainConstants {
     public static final double frontLeftChassisAngularOffset = 5.772;
     public static final double frontRightChassisAngularOffset = 6.099;
     public static final double rearLeftChassisAngularOffset = 0.871 + Math.PI;
-    public static final double rearRightChassisAngularOffset = 3.650;
+    public static final double rearRightChassisAngularOffset = 2.266 + (Math.PI / 2.0);
 
     public static final int frontLeftDrivingPort = 5;
     public static final int rearLeftDrivingPort = 1;
